@@ -153,7 +153,7 @@ Replikasi Master-Master memungkinkan dua server MySQL saling menyinkronkan data 
           ↕ Asynchronous Replication ↕
 ```
 
-Konfigurasi slave di Master 1 (MySQL 8.x):
+Konfigurasi slave di Master 1 (MySQL 8.0.30):
 
 ```sql
 CHANGE MASTER TO
@@ -165,6 +165,15 @@ MASTER_LOG_POS=886;
 
 START SLAVE;
 SHOW SLAVE STATUS;
+```
+Uji coba replikasi dari Master 2
+```sql
+INSERT INTO users (name, email, password, role)
+VALUES ('Alyssa', 'alyssa@gmail.com', '123456', 'user');
+```
+Hasil di Master 1
+```
+<img width="854" height="293" alt="image" src="https://github.com/user-attachments/assets/70a96477-d414-49a0-bce2-ecc28a370501" />
 ```
 
 ---
