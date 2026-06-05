@@ -160,9 +160,7 @@ END;
 DELIMITER ;
 ```
 ### 5. Contoh implementasi trigger `after_insert_booking`:
-``sql
-DROP TRIGGER IF EXISTS `after_insert_booking`;
-
+```sql
 DELIMITER //
 CREATE TRIGGER `after_insert_booking`
 AFTER INSERT ON `bookings`
