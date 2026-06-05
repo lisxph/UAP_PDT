@@ -156,7 +156,7 @@ AND rating >= 3.0;
 
 ### 💾 Backup Otomatis
 
-Sistem backup otomatis menggunakan **mysqldump** via script `.bat` yang dijadwalkan oleh **Windows Task Scheduler**. Backup berjalan setiap hari secara otomatis dan menyimpan file dengan timestamp.
+Sistem backup otomatis menggunakan **mysqldump** via script `.bat` yang dijadwalkan oleh **Windows Task Scheduler**. Backup berjalan setiap hari jam 20.11 secara otomatis dan menyimpan file dengan timestamp.
 
 **Alur backup:**
 ```
@@ -166,23 +166,37 @@ Task Scheduler → wandee_backup.bat → mysqldump → D:\Backup\wandee\
 Script `wandee_backup.bat`:
 
 ```bat
+@echo off
+setlocal enabledelayedexpansion
+
 set "backupDir=D:\Backup\wandee"
-set "mysqlDir=C:\laragon\bin\mysql\mysql-8.0.30-winx64\bin"
-set "dbName=wandee"
+set "mysqlDir=C:\laragonbaru\bin\mysql\mysql-8.0.30-winx64\bin"
 
-:: Generate timestamp & jalankan backup
-"%mysqlDir%\mysqldump.exe" -u root --no-tablespaces %dbName% > "%backupDir%\wandee_backup_%timestamp%.sql"
+:: Extract date parts
+set "month=%date:~4,2%"
+set "day=%date:~7,2%"
+set "year=%date:~10,4%"
 
-:: Rotasi otomatis — hapus backup lebih dari 7 hari
-forfiles /p "%backupDir%" /m *.sql /d -7 /c "cmd /c del @path"
+:: Extract time parts and ensure two-digit hour
+set "hour=%time:~0,2%"
+set "minute=%time:~3,2%"
+
+:: Replace leading space with zero for hours less than 10
+if "!hour:~0,1!"==" " set "hour=0!hour:~1,1!"
+
+:: Construct timestamp
+for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value') do set datetime=%%I
+set "timestamp=%datetime:~0,8%_%datetime:~8,6%"
+
+:: Backup database
+"%mysqlDir%\mysqldump.exe" -u root wandee > "%backupDir%\backup_%timestamp%.sql"
+
+endlocal
+exit /b 0
 ```
+Hasil Backup 
 
-Fitur backup:
-- File backup diberi nama dengan timestamp otomatis, contoh: `wandee_backup_2026-06-05_07-00.sql`
-- Log sukses/gagal dicatat ke `backup_log.txt`
-- File backup lebih dari 7 hari dihapus otomatis untuk menghemat penyimpanan
-- Task Scheduler menjalankan backup setiap hari secara otomatis
-
+![Hasil di master 1](https://github.com/user-attachments/assets/9513176d-a9ee-4a6e-bf44-b8bb95bad73e)
 ---
 
 ### 🔄 Replikasi Master-Master
@@ -213,6 +227,7 @@ Uji coba replikasi dari Master 2
 INSERT INTO users (name, email, password, role)
 VALUES ('Alyssa', 'alyssa@gmail.com', '123456', 'user');
 ```
+Hasil di Master 1
 ![Hasil di master 1](https://github.com/user-attachments/assets/70a96477-d414-49a0-bce2-ecc28a370501)
 
 ---
