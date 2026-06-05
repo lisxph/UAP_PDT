@@ -171,10 +171,7 @@ Uji coba replikasi dari Master 2
 INSERT INTO users (name, email, password, role)
 VALUES ('Alyssa', 'alyssa@gmail.com', '123456', 'user');
 ```
-Hasil di Master 1
-```
-<img width="854" height="293" alt="image" src="https://github.com/user-attachments/assets/70a96477-d414-49a0-bce2-ecc28a370501" />
-```
+![Hasil di master 1](https://github.com/user-attachments/assets/70a96477-d414-49a0-bce2-ecc28a370501)
 
 ---
 
