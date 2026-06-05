@@ -136,7 +136,7 @@ DELIMITER ;
 ```
 
 ### 4. Contoh implementasi trigger `after_delete_destinasi`:
-``SQL
+```SQL
 DELIMITER //
 CREATE TRIGGER `after_delete_destinasi`
 AFTER DELETE ON `destinations`
