@@ -5254,3 +5254,274 @@ body.auth-page {
   color: #39ff78;
 }
 
+/* ==========================================================================
+   ADDITIONAL VIEW SPECIFIC CUSTOM STYLES (CLEANED FROM INLINE CSS)
+   ========================================================================== */
+
+/* Dashboard Admin Custom Rules */
+.stat-growth-green {
+  color: #39ff78 !important;
+}
+.charts-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 30px;
+  margin-bottom: 40px;
+}
+.chart-card-custom {
+  background: rgba(12,18,14,.82);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 24px;
+  padding: 24px;
+}
+.chart-card-title {
+  color: #fff;
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+}
+.badge-small-icon {
+  color: #39ff78;
+  width: 20px;
+  height: 20px;
+}
+.btn-icon-svg {
+  width: 14px;
+  height: 14px;
+}
+.chart-canvas-wrap {
+  position: relative;
+  height: 300px;
+  width: 100%;
+}
+.dashboard-table-card-custom {
+  background: rgba(12,18,14,.82);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 24px;
+  padding: 24px;
+  margin-bottom: 40px;
+}
+.dashboard-table-custom {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  min-width: 600px;
+}
+.dashboard-table-tr-header {
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.dashboard-table-th {
+  padding: 14px 16px;
+  color: rgba(232,240,235,.48);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.dashboard-table-empty {
+  padding: 30px;
+  text-align: center;
+  color: #888;
+  font-style: italic;
+}
+.dashboard-table-tr {
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background-color 0.2s;
+}
+.dashboard-table-tr:hover {
+  background-color: rgba(255,255,255,0.01) !important;
+}
+.dashboard-table-td {
+  padding: 16px;
+  color: #fff;
+}
+.dashboard-table-td-muted {
+  padding: 16px;
+  color: #ccc;
+}
+.dashboard-table-td-accent {
+  padding: 16px;
+  color: #39ff78;
+  font-weight: bold;
+}
+
+/* Manage Payments and Reviews Common */
+.dest-empty-notice {
+  padding: 40px;
+  text-align: center;
+  color: #888;
+}
+.payment-method-badge {
+  background: rgba(255,255,255,0.05);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: bold;
+}
+.payment-proof-img-thumb {
+  width: 72px;
+  height: 50px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: transform 0.2s;
+}
+.payment-proof-preview-btn,
+.review-image-preview-btn {
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+.payment-proof-img-thumb:hover {
+  transform: scale(1.1);
+}
+.text-italic-muted {
+  color: #666;
+  font-style: italic;
+}
+.btn-action-wrapper {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.margin-zero {
+  margin: 0 !important;
+}
+
+/* Manage Reviews Specific */
+.review-text-header {
+  width: 35%;
+}
+.badge-rating-stars {
+  color: #fbbf24;
+  font-weight: bold;
+  background: rgba(251, 191, 36, 0.1);
+  padding: 4px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.review-text-cell {
+  line-height: 1.5;
+  color: #ccc;
+  font-size: 0.9rem;
+}
+.review-image-thumb {
+  width: 72px;
+  height: 50px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: transform 0.2s;
+}
+.review-image-thumb:hover {
+  transform: scale(1.1);
+}
+.review-date-text {
+  color: #888;
+}
+.btn-trash-icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* Edit Destination Specific */
+.back-arrow-icon {
+  width: 18px;
+  height: 18px;
+}
+.rating-readonly-field {
+  background: rgba(255,255,255,0.01);
+  color: #888;
+  border-color: rgba(255,255,255,0.05);
+  cursor: not-allowed;
+}
+.help-text-block {
+  display: inline-block;
+  margin-top: 8px;
+  color: rgba(232,240,235,.52);
+  font-size: .86rem;
+}
+
+/* Destinations list (Manage) Specific */
+.manage-thumb {
+  width: 120px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 16px;
+}
+.manage-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.btn-edit,
+.btn-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 16px;
+  border-radius: 12px;
+  font-size: .82rem;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+}
+.btn-edit {
+  background: #4f46e5;
+}
+.btn-delete {
+  background: #ef4444;
+}
+
+/* Admin Profile Form Specific */
+.profile-grid-margin {
+  margin-bottom: 24px;
+}
+.admin-profile-form-layout {
+  display: grid;
+  gap: 20px;
+}
+.admin-profile-grid-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+/* User Favorite View Specific */
+.favorite-empty-center {
+  text-align: center;
+}
+.favorite-empty-text {
+  margin-bottom: 16px;
+}
+.favorite-remove-form {
+  margin-top: 16px;
+}
+.btn-full-width {
+  width: 100%;
+}
+
+/* Auth Specific */
+.auth-card-hidden {
+  display: none !important;
+}
+
+.success-alert{
+    background: rgba(60,245,108,.15);
+    border: 1px solid rgba(60,245,108,.3);
+    color: #3CF56C;
+
+    padding: 14px 18px;
+    border-radius: 12px;
+
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
