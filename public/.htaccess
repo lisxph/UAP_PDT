@@ -1,0 +1,14 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /wandee/public/
+
+
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+
+  RewriteRule ^ index.php [L,QSA]
+</IfModule>
+
+<IfModule !mod_rewrite.c>
+  ErrorDocument 404 /wandee/public/index.php
+</IfModule>
