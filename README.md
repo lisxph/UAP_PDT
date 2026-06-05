@@ -24,8 +24,87 @@ Tabel log yang dibuat sebagai audit trail:
 - `log_hapus_destinasi` — menyimpan data destinasi sebelum dihapus admin
 - `log_booking_baru` — mencatat setiap booking baru yang masuk
 
-Contoh implementasi trigger `after_update_payment`:
+### 1. Contoh implementasi trigger `after_insert_review`:
+```sql
+DELIMITER //
+CREATE TRIGGER `after_insert_review`
+AFTER INSERT ON `reviews`
+FOR EACH ROW
+BEGIN
+    DECLARE v_avg_rating  DECIMAL(2,1);
+    DECLARE v_total       INT;
+    DECLARE v_rating_lama DECIMAL(2,1);
+    DECLARE v_judul       VARCHAR(255);
 
+    -- Ambil rating lama dan judul destinasi
+    SELECT rating, title
+    INTO v_rating_lama, v_judul
+    FROM destinations
+    WHERE id = NEW.destination_id;
+
+    -- Hitung rata-rata rating baru dari semua review
+    SELECT ROUND(AVG(rating), 1), COUNT(*)
+    INTO v_avg_rating, v_total
+    FROM reviews
+    WHERE destination_id = NEW.destination_id;
+
+    -- Update rating di tabel destinations
+    UPDATE destinations
+    SET rating = v_avg_rating
+    WHERE id = NEW.destination_id;
+
+    -- Catat perubahan ke log
+    INSERT INTO log_rating_destinasi
+        (destination_id, judul_destinasi, rating_lama, rating_baru, total_review, keterangan)
+    VALUES
+        (NEW.destination_id, v_judul, v_rating_lama, v_avg_rating, v_total, 'Update dari review baru');
+END;
+//
+DELIMITER ;
+```
+### 2. Contoh implementasi trigger `after_delete_review`:
+```sql
+DELIMITER //
+CREATE TRIGGER `after_delete_review`
+AFTER DELETE ON `reviews`
+FOR EACH ROW
+BEGIN
+    DECLARE v_avg_rating  DECIMAL(2,1);
+    DECLARE v_total       INT;
+    DECLARE v_rating_lama DECIMAL(2,1);
+    DECLARE v_judul       VARCHAR(255);
+
+ -- Ambil rating lama dan judul destinasi
+    SELECT rating, title
+    INTO v_rating_lama, v_judul
+    FROM destinations
+    WHERE id = OLD.destination_id;
+
+-- Hitung ulang rata-rata setelah review dihapus
+    SELECT ROUND(AVG(rating), 1), COUNT(*)
+    INTO v_avg_rating, v_total
+    FROM reviews
+    WHERE destination_id = OLD.destination_id;
+
+ -- Jika tidak ada review tersisa, kembalikan rating ke 5.0
+    IF v_total = 0 THEN
+        SET v_avg_rating = 0.0;
+    END IF;
+
+    UPDATE destinations
+    SET rating = v_avg_rating
+    WHERE id = OLD.destination_id;
+
+    INSERT INTO log_rating_destinasi
+        (destination_id, judul_destinasi, rating_lama, rating_baru, total_review, keterangan)
+    VALUES
+        (OLD.destination_id, v_judul, v_rating_lama, v_avg_rating, v_total, 'Recalculate setelah review dihapus');
+END;
+//
+DELIMITER ;
+```
+ 
+### 3. Contoh implementasi trigger `after_update_payment`:
 ```sql
 DELIMITER //
 CREATE TRIGGER after_update_payment
@@ -56,6 +135,41 @@ END;
 DELIMITER ;
 ```
 
+### 4. Contoh implementasi trigger `after_delete_destinasi`:
+``SQL
+DELIMITER //
+CREATE TRIGGER `after_delete_destinasi`
+AFTER DELETE ON `destinations`
+FOR EACH ROW
+BEGIN
+    INSERT INTO log_hapus_destinasi
+        (dest_id, judul, lokasi, kategori, harga, rating)
+    VALUES
+        (OLD.id, OLD.title, OLD.location, OLD.category, OLD.price, OLD.rating);
+END;
+//
+DELIMITER ;
+```
+### 5. Contoh implementasi trigger `after_insert_booking`:
+``SQL
+DROP TRIGGER IF EXISTS `after_insert_booking`;
+
+DELIMITER //
+CREATE TRIGGER `after_insert_booking`
+AFTER INSERT ON `bookings`
+FOR EACH ROW
+BEGIN
+    INSERT INTO log_booking_baru
+        (booking_id, user_id, destination_id, total_people, total_price, keterangan)
+    VALUES
+        (NEW.id, NEW.user_id, NEW.destination_id, NEW.total_people, NEW.total_price, 'Booking baru masuk');
+END;
+//
+DELIMITER ;
+```
+
+Cek Trigger yang Sudah Dibuat
+https://raw.githubusercontent.com/TiwiMustikaDewi/LearnAndroidMobile/refs/heads/main/Screenshot%202026-06-05%20175216.png
 ---
 ## 🧩 Fragmentasi Data
 
