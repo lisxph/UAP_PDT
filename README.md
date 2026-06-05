@@ -98,45 +98,54 @@ BEGIN
     INSERT INTO log_rating_destinasi
         (destination_id, judul_destinasi, rating_lama, rating_baru, total_review, keterangan)
     VALUES
-        (OLD.destination_id, v_judul, v_rating_lama, v_avg_rating, v_total, 'Recalculate setelah review dihapus');
+        (OLD.destination_id, v_judul, v_rating_lama, v_avg_rating, v_total, 'Perhitungan ulang rating setelah ulasan dihapus');
 END;
 //
 DELIMITER ;
 ```
- 
 ### 3. Contoh implementasi trigger `after_update_payment`:
 ```sql
 DELIMITER //
-CREATE TRIGGER after_update_payment
-AFTER UPDATE ON payments
+CREATE TRIGGER `after_update_payment`
+AFTER UPDATE ON `payments`
 FOR EACH ROW
 BEGIN
-  -- Jika payment diverifikasi → booking otomatis paid
-  IF NEW.payment_status = 'verified' AND OLD.payment_status != 'verified' THEN
-    UPDATE bookings SET payment_status = 'paid'
-    WHERE id = NEW.booking_id;
-  END IF;
+    DECLARE v_nama_user VARCHAR(100);
 
-  -- Jika payment ditolak → booking otomatis cancelled
-  IF NEW.payment_status = 'rejected' AND OLD.payment_status != 'rejected' THEN
-    UPDATE bookings SET payment_status = 'cancelled'
-    WHERE id = NEW.booking_id;
-  END IF;
+    -- Ambil nama user dari booking
+    SELECT u.name INTO v_nama_user
+    FROM bookings b
+    LEFT JOIN users u ON b.user_id = u.id
+    WHERE b.id = NEW.booking_id
+    LIMIT 1;
 
-  -- Catat semua perubahan ke log
-  IF NEW.payment_status != OLD.payment_status THEN
-    INSERT INTO log_pembayaran
-      (payment_id, booking_id, nama_user, status_lama, status_baru, alasan_tolak)
-    VALUES
-      (NEW.id, NEW.booking_id, v_nama_user, OLD.payment_status, NEW.payment_status, NEW.rejection_reason);
-  END IF;
+    -- Jika status berubah ke 'verified'
+    IF NEW.payment_status = 'verified' AND OLD.payment_status != 'verified' THEN
+        UPDATE bookings
+        SET payment_status = 'paid'
+        WHERE id = NEW.booking_id;
+    END IF;
+
+    -- Jika status berubah ke 'rejected'
+    IF NEW.payment_status = 'rejected' AND OLD.payment_status != 'rejected' THEN
+        UPDATE bookings
+        SET payment_status = 'cancelled'
+        WHERE id = NEW.booking_id;
+    END IF;
+
+    -- Catat semua perubahan status ke log
+    IF NEW.payment_status != OLD.payment_status THEN
+        INSERT INTO log_pembayaran
+            (payment_id, booking_id, nama_user, status_lama, status_baru, alasan_tolak)
+        VALUES
+            (NEW.id, NEW.booking_id, v_nama_user, OLD.payment_status, NEW.payment_status, NEW.rejection_reason);
+    END IF;
 END;
 //
 DELIMITER ;
 ```
-
 ### 4. Contoh implementasi trigger `after_delete_destinasi`:
-```SQL
+```sql
 DELIMITER //
 CREATE TRIGGER `after_delete_destinasi`
 AFTER DELETE ON `destinations`
@@ -151,7 +160,7 @@ END;
 DELIMITER ;
 ```
 ### 5. Contoh implementasi trigger `after_insert_booking`:
-``SQL
+``sql
 DROP TRIGGER IF EXISTS `after_insert_booking`;
 
 DELIMITER //
@@ -167,10 +176,9 @@ END;
 //
 DELIMITER ;
 ```
-
-Cek Trigger yang Sudah Dibuat
-https://raw.githubusercontent.com/TiwiMustikaDewi/LearnAndroidMobile/refs/heads/main/Screenshot%202026-06-05%20175216.png
 ---
+![Cek Trigger yang Sudah Dibuat](https://raw.githubusercontent.com/TiwiMustikaDewi/LearnAndroidMobile/refs/heads/main/Screenshot%202026-06-05%20175216.png)
+
 ## 🧩 Fragmentasi Data
 
 Fragmentasi diimplementasikan menggunakan dua pendekatan pada database Wandee.
