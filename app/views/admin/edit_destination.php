@@ -117,7 +117,7 @@ unset($_SESSION['form_errors'], $_SESSION['form_old']);
 </div>
 
 <?php require __DIR__ . '/../partials/logout_modal.php'; ?>
-
+ 
 <script>
   const destinationImage = document.getElementById('destinationImage');
   const destinationImageName = document.getElementById('destinationImageName');
