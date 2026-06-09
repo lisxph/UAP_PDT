@@ -24,6 +24,7 @@ class AdminController extends Controller {
         $this->bookingModel = new BookingModel($conn);
         $this->paymentModel = new PaymentModel($conn);
         $this->reviewModel = new ReviewModel($conn);
+        
     }
 
     protected function requireAdmin()
@@ -77,7 +78,8 @@ class AdminController extends Controller {
         $category_stats = $this->dashboardModel->getCategoryStats();
         $recent_bookings = $this->dashboardModel->getRecentBookings(5);
         $monthly_stats = $this->dashboardModel->getMonthlyBookingStats();
-
+        $validBookings = $this->dashboardModel->getValidBookings();
+        $activityLog   = $this->dashboardModel->getActivityLog();
         require __DIR__ . '/../views/admin/dashboard.php';
     }
 
@@ -105,13 +107,22 @@ class AdminController extends Controller {
     $status = $_POST['status'] ?? '';
     $rejection_reason = trim($_POST['rejection_reason'] ?? '');
 
+    // normalize status and validate
+    $status = strtolower(trim($status));
     $valid = ['verified', 'rejected'];
+
+    // temporary log for debugging unexpected status changes
+    $logFile = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'wandee_payment_update.log';
+    $msg = sprintf("[%s] payment_update called - payment_id=%s status=%s rejection_reason=%s\n", date('c'), var_export($payment_id, true), var_export($status, true), substr($rejection_reason, 0, 200));
+    error_log($msg, 3, $logFile);
 
     if($payment_id && in_array($status, $valid, true)){
 
         $payment = $this->paymentModel->findById($payment_id);
 
         if($payment){
+            // log current payment record before change
+            error_log(sprintf("[%s] existing payment status=%s, booking_id=%s\n", date('c'), ($payment['payment_status'] ?? ''), ($payment['booking_id'] ?? '')) , 3, $logFile);
 
             $booking = $this->bookingModel->findById($payment['booking_id']);
 
@@ -124,22 +135,34 @@ class AdminController extends Controller {
                 exit;
             }
 
-            $this->paymentModel->updateStatus(
-                $payment_id,
-                $status,
-                $rejection_reason
-            );
+            if ($status === 'verified') {
+                $resVerify = $this->paymentModel->verifyPayment($payment_id);
+                error_log(sprintf("[%s] verifyPayment result=%s\n", date('c'), var_export((bool)$resVerify, true)), 3, $logFile);
 
-            $this->bookingModel->updatePaymentStatus(
-                $payment['booking_id'],
-                $status === 'verified' ? 'paid' : 'pending'
-            );
+                $this->bookingModel->updatePaymentStatus(
+                    $payment['booking_id'],
+                    'paid'
+                );
 
-            if($status === 'verified'){
                 $this->bookingModel->updateTripStatus(
                     $payment['booking_id'],
                     'ongoing'
                 );
+            } else {
+                $resUpdate = $this->paymentModel->updateStatus($payment_id, 'rejected', $rejection_reason);
+                error_log(sprintf("[%s] updateStatus result=%s\n", date('c'), var_export((bool)$resUpdate, true)), 3, $logFile);
+
+                $this->bookingModel->updatePaymentStatus(
+                    $payment['booking_id'],
+                    'pending'
+                );
+
+                if ($booking && ($booking['trip_status'] ?? '') === 'ongoing') {
+                    $this->bookingModel->updateTripStatus(
+                        $payment['booking_id'],
+                        'new'
+                    );
+                }
             }
         }
     }
