@@ -179,41 +179,9 @@ DELIMITER ;
 
 ## 🧩 Fragmentasi Data
 
-Fragmentasi diimplementasikan menggunakan dua pendekatan pada database Wandee.
+Fragmentasi pada Wandee diimplementasikan CREATE TABLE pada tabel destinations.
 
-**Alur Fragmentasi:**
-### 1. Fragmentasi Fisik — Bookings per Tahun (RANGE PARTITION)
-
-Tabel `bookings` dipartisi secara fisik berdasarkan tahun dari kolom `created_at`, sehingga data booking terpisah di masing-masing partisi dan query lebih efisien.
-
-```sql
-CREATE TABLE `bookings` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` int DEFAULT NULL,
-  `destination_id` int DEFAULT NULL,
-  `total_people` int DEFAULT '1',
-  `total_price` int DEFAULT NULL,
-  `payment_status` enum('pending','paid','cancelled') DEFAULT 'pending',
-  `trip_status` enum('new','ongoing','completed','cancelled') DEFAULT 'new',
-  `created_at` date NOT NULL DEFAULT (CURRENT_DATE),
-  PRIMARY KEY (`id`, `created_at`)
-) ENGINE=InnoDB
-PARTITION BY RANGE COLUMNS(created_at) (
-  PARTITION p2024 VALUES LESS THAN ('2025-01-01'),
-  PARTITION p2025 VALUES LESS THAN ('2026-01-01'),
-  PARTITION p2026 VALUES LESS THAN ('2027-01-01'),
-  PARTITION p_future VALUES LESS THAN MAXVALUE
-);
-```
-
-Verifikasi partisi:
-```sql
-SELECT PARTITION_NAME, TABLE_ROWS
-FROM information_schema.PARTITIONS
-WHERE TABLE_NAME = 'bookings' AND TABLE_SCHEMA = 'wandee';
-```
-
-### 2. Fragmentasi Horizontal — Destinations per Kategori
+### 1. Fragmentasi Horizontal — Destinations per Kategori
 
 Tabel `destinations` dipecah berdasarkan baris menggunakan kolom `category`.
 
@@ -237,30 +205,28 @@ UNION ALL
 SELECT * FROM frag_dest_lainnya;
 ```
 
-### 3. Fragmentasi Vertikal — Data Publik vs Detail
+### 2. Fragmentasi Vertikal — Data Publik vs Detail
 
 Kolom `destinations` dipisah menjadi data publik dan data detail.
 
 ```sql
--- Fragmen publik (tampil di halaman listing)
 CREATE TABLE frag_dest_publik AS
 SELECT id, title, location, category, image, trip_date, rating
 FROM destinations;
 
--- Fragmen detail (tampil di halaman detail destinasi)
 CREATE TABLE frag_dest_detail AS
 SELECT id, title, price, description, created_at
 FROM destinations;
 ```
 
-**Reconstruction Rule** — gabungkan kembali dengan JOIN:
+**JOIN**
 ```sql
 SELECT p.*, d.price, d.description, d.created_at
 FROM frag_dest_publik p
 JOIN frag_dest_detail d ON p.id = d.id;
 ```
 
-### 4. Fragmentasi Campuran — Destinasi Populer
+### 3. Fragmentasi Campuran — Destinasi Populer
 
 Kombinasi filter baris dan kolom: destinasi Gunung & Pantai dengan rating ≥ 3.0.
 
