@@ -177,6 +177,53 @@ DELIMITER ;
 ---
 ![Cek Trigger yang Sudah Dibuat](https://raw.githubusercontent.com/TiwiMustikaDewi/LearnAndroidMobile/refs/heads/main/Screenshot%202026-06-05%20175216.png)
 
+🔧 Stored Function
+Function pasa Wandee terdapat 3 custom function yang disimpan di database dan bisa dilihat di phpMyAdmin tab Routines.
+
+### 1. cek_status_booking — Function Logika IF-ELSE
+```sql
+DELIMITER //
+CREATE FUNCTION cek_status_booking(status VARCHAR(20))
+RETURNS VARCHAR(50)
+DETERMINISTIC
+BEGIN
+    IF status = 'paid' THEN
+        RETURN 'Pembayaran Terverifikasi';
+    ELSEIF status = 'pending' THEN
+        RETURN 'Menunggu Verifikasi';
+    ELSEIF status = 'cancelled' THEN
+        RETURN 'Booking Dibatalkan';
+    ELSE
+        RETURN 'Status Tidak Diketahui';
+    END IF;
+END //
+DELIMITER ;
+```
+### 2. kode_destinasi — Function Manipulasi String
+```sql
+DELIMITER //
+CREATE FUNCTION kode_destinasi(nama_dest VARCHAR(100))
+RETURNS VARCHAR(10)
+DETERMINISTIC
+BEGIN
+    RETURN UPPER(LEFT(nama_dest, 3));
+END //
+DELIMITER ;
+```
+### 3. info_destinasi — Function CONCAT String
+```sql
+DELIMITER //
+CREATE FUNCTION info_destinasi(
+    nama_dest VARCHAR(100),
+    lokasi VARCHAR(100)
+)
+RETURNS VARCHAR(200)
+DETERMINISTIC
+BEGIN
+    RETURN CONCAT('Destinasi ', nama_dest, ' berlokasi di ', lokasi);
+END //
+DELIMITER ;
+```
 ## 🧩 Fragmentasi Data
 
 Fragmentasi pada Wandee diimplementasikan CREATE TABLE pada tabel destinations.
