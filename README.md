@@ -381,6 +381,7 @@ Built-in Function yang Digunakan
 | ReviewModel.php | `MAX()` | Mencari rating tertinggi |
 | ReviewModel.php | `MIN()` | Mencari rating terendah |
 
+### Custom Function
 ### 1. cek_status_booking — Function Logika IF-ELSE
 ```sql
 DELIMITER //
