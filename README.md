@@ -1,9 +1,11 @@
-🧭 Wandee (Proyek UAP)
-Wandee adalah platform pemesanan wisata yang dibangun menggunakan PHP dan MySQL melalui Laragon. Sistem ini mengelola destinasi wisata, booking perjalanan, pembayaran, dan ulasan pengguna. Dalam konteks mata kuliah Pemrosesan Data Terdistribusi, Wandee dilengkapi dengan implementasi Database Views, SQL Joins & Set Operations, Transactions, Deadlock Management, Function & Stored Procedure, trigger otomatis, fragmentasi data, backup database + task scheduler, dan replikasi Master-Master untuk meningkatkan keandalan dan ketersediaan sistem.
+# 🧭 Wandee (Proyek UAP)
+Wandee adalah platform pemesanan wisata yang dibangun menggunakan PHP dan MySQL melalui Laragon. Sistem ini mengelola destinasi wisata, booking perjalanan, pembayaran, dan ulasan pengguna. Dalam konteks mata kuliah Pemrosesan Data Terdistribusi, Wandee dilengkapi dengan implementasi **Database Views, SQL Joins & Set Operations, Transactions, Deadlock Management, Function & Stored Procedure, trigger otomatis, fragmentasi data, backup database + task scheduler, dan replikasi Master-Master** untuk meningkatkan keandalan dan ketersediaan sistem.
 
-🗂️ Detail Konsep
+_____
 
-🔗 SQL Joins & Set Operations
+# 🗂️ Detail Konsep
+
+## 🔗 SQL Joins & Set Operations
 
 ### 1. INNER JOIN — Booking Valid (DashboardModel::getValidBookings)
 Menampilkan hanya booking yang dipastikan memiliki user dan destinasi yang valid. Tidak menampilkan data kosong.
@@ -42,7 +44,7 @@ ORDER BY booking_count DESC;
 ```
 
 ### 4. Simulasi FULL JOIN (DestinationModel::getFullJoinUsersDestinations)
-MySQL tidak mendukung FULL OUTER JOIN secara langsung, sehingga disimulasikan dengan LEFT JOIN + UNION + RIGHT JOIN. Menampilkan semua user dan semua destinasi, termasuk user yang belum booking dan destinasi yang belum pernah dibooking.
+FULL JOIN disimulasikan dengan LEFT JOIN + UNION + RIGHT JOIN. FULL JOIN menampilkan semua user dan semua destinasi, termasuk user yang belum booking dan destinasi yang belum pernah dibooking.
 ```sql
 SELECT u.id AS user_id, u.name AS user_name,
        d.id AS dest_id, d.title AS dest_title,
@@ -122,6 +124,69 @@ public function createWithPayment($bookingData, $paymentData) {
     }
 }
 ```
+
+## 💥 Deadlock Management
+Deadlock disimulasikan dan ditangani secara eksplisit di Wandee. Deadlock terjadi di method createWithPayment() pada BookingModel.php, tepatnya saat dua user menekan tombol "Lanjutkan ke Instruksi Pembayaran" pada destinasi yang sama secara bersamaan.
+
+**Skenario Deadlock (Pola A-B Circular Wait):**
+Device A (user 7):                    Device B (user 8):
+START TRANSACTION                     START TRANSACTION
+│                                     │
+├─ LOCK destinations(id=5) ✓          ├─ LOCK payments(id=29) ✓
+│                                     │
+├─ SLEEP 8 detik...                   ├─ SLEEP 2 detik...
+│                                     │
+│                                     ├─ coba LOCK destinations(id=5)
+│                                     │  ← DITAHAN, A masih pegang
+│                                     │
+├─ coba LOCK payments(id=29)          │
+│  ← DITAHAN, B masih pegang          │
+│                                     │
+▼                                     ▼
+         A nunggu B, B nunggu A
+              → DEADLOCK!
+         MySQL rollback salah satu
+
+### Implementasi simulasi di BookingModel::createWithPayment:
+``sql
+if ($isOddUser) {
+    // Urutan A: destinations → payments
+    mysqli_query($this->conn, "SELECT id FROM destinations WHERE id = $destination_id FOR UPDATE");
+    mysqli_query($this->conn, "SELECT SLEEP(8)");
+    mysqli_query($this->conn, "SELECT id FROM payments WHERE id = 29 FOR UPDATE");
+} else {
+    // Urutan B: payments → destinations (urutan TERBALIK dari A)
+    mysqli_query($this->conn, "SELECT id FROM payments WHERE id = 29 FOR UPDATE");
+    mysqli_query($this->conn, "SELECT SLEEP(2)");
+    mysqli_query($this->conn, "SELECT id FROM destinations WHERE id = $destination_id FOR UPDATE");
+}
+```
+
+### Penanganan Deadlock
+**1. Penanganan oleh DBMS (Otomatis)**
+MySQL InnoDB mendeteksi deadlock secara otomatis dan melakukan ROLLBACK pada salah satu transaksi. Transaksi yang di-rollback mendapat error 1213 dan harus diulangi.
+
+2. Rollback Manual:
+ROLLBACK;           -- Batalkan semua perubahan dalam transaksi
+SET autocommit = 1; -- Kembalikan autocommit ke normal
+
+3. Penanganan di PHP — Deteksi errno 1213:
+if (isset($result['error'])) {
+    // MySQL errno 1213 = Deadlock found when trying to get lock
+    if (($result['errno'] ?? 0) === 1213) {
+        header('Location: /wandee/user/payment?id=' . $destination_id . '&error=deadlock');
+    } else {
+        header('Location: /wandee/user/payment?id=' . $destination_id . '&error=booking_failed');
+    }
+    exit;
+}
+
+Tampilan pesan di payment.php:
+<?php if (($_GET['error'] ?? '') === 'deadlock'): ?>
+    Terjadi Deadlock — Transaksi Dibatalkan Otomatis
+<?php endif; ?>
+
+
 ### ⚡ Trigger
 
 Trigger diimplementasikan untuk mengotomasi proses bisnis pada Wandee tanpa perlu intervensi manual dari aplikasi. Terdapat 5 trigger yang dibuat beserta tabel log pendukungnya.
