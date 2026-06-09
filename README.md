@@ -180,6 +180,24 @@ DELIMITER ;
 # 🔧 Stored Function
 Function pasa Wandee terdapat 3 custom function yang disimpan di database dan bisa dilihat di phpMyAdmin tab Routines.
 
+### Built-in Function
+
+Built-in function MySQL yang digunakan di proyek Wandee terbagi tiga kelompok:
+
+| Kelompok | Function | Lokasi |
+|---|---|---|
+| Tanggal & Waktu | `NOW()` | BookingModel.php — isi `created_at` saat INSERT booking |
+| Tanggal & Waktu | `CURRENT_TIMESTAMP` | Default kolom `created_at` / `updated_at` / `dihapus_at` di hampir semua tabel |
+| Tanggal & Waktu | `DATE_SUB(NOW(), INTERVAL 3 MINUTE)` | EVENT `auto_cancel_booking` — cek booking kadaluarsa |
+| Tanggal & Waktu | `DATE_FORMAT` & `MONTH` | DashboardModel.php — grafik booking bulanan |
+| Agregat | `AVG(rating)` | Trigger `after_insert_review` — hitung rata-rata rating |
+| Agregat | `COUNT(*)` | Trigger (jumlah review) & DashboardModel (statistik kategori & bulanan) |
+| Agregat | `ROUND(AVG(rating), 1)` | Trigger `after_insert_review` — bulatkan rating ke 1 desimal |
+| Agregat | `SUM(payment_amount)` | DashboardModel.php — hitung total revenue dari payment verified |
+| Agregat | `max(1,...)` & `min(5,...)` | ReviewModel.php — batasi nilai rating antara 1-5 |
+| String | `CONCAT(...)` | Custom function `info_destinasi` |
+| String | `UPPER(LEFT(nama, 3))` | Custom function `kode_destinasi` — ambil 3 karakter pertama jadi kapital |
+
 ### 1. cek_status_booking — Function Logika IF-ELSE
 ```sql
 DELIMITER //
