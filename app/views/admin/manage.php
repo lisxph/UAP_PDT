@@ -352,7 +352,7 @@ deleteConfirmBtn?.addEventListener('click', (event) => {
     window.location.href = deleteUrl;
   }
 
-});
+}); 
 
 document.addEventListener('keydown', (event) => {
 
