@@ -119,7 +119,7 @@
       ($payment['trip_status'] ?? '') !== 'cancelled'
     ): ?>
 
-      <form action="/wandee/admin/payment_update" method="POST" class="margin-zero">
+      <form action="/wandee/admin/payment_update" method="POST" class="margin-zero confirm-accept-form">
         <input type="hidden" name="payment_id" value="<?= (int)$payment['id'] ?>">
         <input type="hidden" name="status" value="verified">
 
@@ -167,15 +167,7 @@
     <?php endif; ?>
 
     <?php if ($status === 'rejected'): ?>
-      <form action="/wandee/admin/payment_update" method="POST" class="margin-zero">
-        <input type="hidden" name="payment_id" value="<?= (int)$payment['id'] ?>">
-        <input type="hidden" name="status" value="verified">
-
-        <button type="submit" class="btn-action-verif">
-          <i data-lucide="check" class="btn-icon-svg"></i>
-          Terima
-        </button>
-      </form>
+      <!-- Rejected payments are final; no accept button shown -->
     <?php endif; ?>
 
   </div>
@@ -304,6 +296,14 @@ paymentProofModal.addEventListener('click', event => {
     if (event.target === paymentProofModal) {
         closePaymentProofModal();
     }
+});
+
+// confirm accept forms to avoid accidental verification
+document.querySelectorAll('.confirm-accept-form').forEach(form => {
+  form.addEventListener('submit', (e) => {
+    const ok = confirm('Terima pembayaran ini? Aksi ini akan menandai pembayaran sebagai terverifikasi.');
+    if(!ok) e.preventDefault();
+  });
 });
 
 document.addEventListener('keydown', event => {
