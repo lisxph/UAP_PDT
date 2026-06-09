@@ -98,4 +98,13 @@ elseif($filter === 'completed'){
         }
         return $data;
     }
+    public function verifyPayment($payment_id)
+{
+    $payment_id = (int)$payment_id;
+
+    return mysqli_query(
+        $this->conn,
+        "CALL sp_verify_payment($payment_id)"
+    );
+}
 }
