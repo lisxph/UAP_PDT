@@ -138,7 +138,7 @@
     reviewImageModal.classList.remove('is-open');
     reviewImageModal.setAttribute('aria-hidden', 'true');
     reviewImagePreview.src = '';
-  }
+  } 
 
   reviewImageClose.addEventListener('click', closeReviewImageModal);
   reviewImageModal.addEventListener('click', event => {
