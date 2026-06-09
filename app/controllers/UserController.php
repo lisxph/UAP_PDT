@@ -270,25 +270,37 @@ class UserController extends Controller {
         $total_price = $this->priceToInt($destination['price'] ?? 0) * $people;
         $voucher_code = '';
 
-        $booking_id = $this->bookingModel->create([
-            'user_id' => $user_id,
+        $result = $this->bookingModel->createWithPayment([
+            'user_id'        => $user_id,
             'destination_id' => $destination_id,
-            'total_people' => $people,
-            'total_price' => $total_price,
+            'total_people'   => $people,
+            'total_price'    => $total_price,
             'payment_status' => 'pending',
-            'trip_status' => 'new'
-        ]);
-
-        $payment_id = $this->paymentModel->create([
-            'booking_id' => $booking_id,
+            'trip_status'    => 'new',
+        ],
+        [
             'payment_method' => $method,
             'payment_amount' => $total_price,
-            'unique_code' => $voucher_code,
-            'payment_status' => 'waiting'
-        ]);
+            'unique_code'    => $voucher_code,
+            'payment_status' => 'waiting',
+        ]
+    );
 
-        header('Location: /wandee/user/payment_detail?booking_id=' . $booking_id . '&payment_id=' . $payment_id);
+    if(isset($result['error'])){
+        // Deadlock: errno 1213
+        if(($result['errno'] ?? 0) === 1213){
+            header('Location: /wandee/user/payment?id=' . $destination_id . '&error=deadlock');
+        } else {
+            header('Location: /wandee/user/payment?id=' . $destination_id . '&error=booking_failed');
+        }
         exit;
+    }
+
+    $booking_id = $result['booking_id'];
+    $payment_id = $result['payment_id'];
+
+    header('Location: /wandee/user/payment_detail?booking_id=' . $booking_id . '&payment_id=' . $payment_id);
+    exit;
     }
 
     public function payment_upload(){
