@@ -1,5 +1,5 @@
 # 🧭 Wandee (Proyek UAP)
-Wandee adalah platform pemesanan wisata yang dibangun menggunakan PHP dan MySQL melalui Laragon. Sistem ini mengelola destinasi wisata, booking perjalanan, pembayaran, dan ulasan pengguna. Dalam konteks mata kuliah Pemrosesan Data Terdistribusi, Wandee dilengkapi dengan implementasi **Database Views, SQL Joins & Set Operations, Transactions, Deadlock Management, Function & Stored Procedure, trigger otomatis, fragmentasi data, backup database + task scheduler, dan replikasi Master-Master** untuk meningkatkan keandalan dan ketersediaan sistem.
+Wandee adalah platform pemesanan wisata yang dibangun menggunakan PHP dan MySQL melalui Laragon. Sistem ini mengelola destinasi wisata, booking perjalanan, pembayaran, dan ulasan pengguna. Dalam konteks mata kuliah Pemrosesan Data Terdistribusi, Wandee dilengkapi dengan implementasi **SQL Joins & Set Operations, Transactions, Deadlock Management, Function & Stored Procedure, trigger otomatis, fragmentasi data, backup database + task scheduler, dan replikasi Master-Master** untuk meningkatkan keandalan dan ketersediaan sistem.
 
 _____
 
