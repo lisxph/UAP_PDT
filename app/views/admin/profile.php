@@ -111,7 +111,7 @@
         </div>
       </section>
     </main>
-  </div>
+  </div> 
 
   <?php require __DIR__ . '/../partials/logout_modal.php'; ?>
   <?php require __DIR__ . '/../partials/upload_lightbox.php'; ?>
