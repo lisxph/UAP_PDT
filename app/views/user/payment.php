@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 
 <head>
@@ -17,6 +17,39 @@
   <?php require __DIR__ . '/../partials/navbar.php'; ?>
 
   <main class="payment-shell">
+
+    <?php if(($_GET['error'] ?? '') === 'deadlock'): ?>
+    <div style="
+      background:#fef3c7; border:2px solid #f59e0b; border-radius:12px;
+      padding:1rem 1.25rem; margin-bottom:1.25rem;
+      display:flex; align-items:flex-start; gap:.75rem;">
+      <i data-lucide="alert-triangle" style="color:#d97706; flex-shrink:0; margin-top:2px;"></i>
+      <div>
+        <strong style="color:#92400e; display:block; margin-bottom:.2rem;">
+          Terjadi Deadlock — Transaksi Dibatalkan Otomatis
+        </strong>
+        <span style="font-size:.9rem; color:#78350f;">
+          Sistem mendeteksi dua pemesanan destinasi yang sama di waktu bersamaan.
+          Transaksi kamu dibatalkan oleh database untuk mencegah konflik data.
+          Silakan coba pesan kembali.
+        </span>
+      </div>
+    </div>
+    <?php elseif(($_GET['error'] ?? '') === 'booking_failed'): ?>
+    <div style="
+      background:#fee2e2; border:1px solid #fca5a5; border-radius:12px;
+      padding:1rem 1.25rem; margin-bottom:1.25rem;
+      display:flex; align-items:flex-start; gap:.75rem;">
+      <i data-lucide="x-circle" style="color:#dc2626; flex-shrink:0; margin-top:2px;"></i>
+      <div>
+        <strong style="color:#991b1b; display:block; margin-bottom:.2rem;">Pemesanan Gagal</strong>
+        <span style="font-size:.9rem; color:#7f1d1d;">
+          Terjadi kesalahan saat memproses pesanan. Silakan coba lagi.
+        </span>
+      </div>
+    </div>
+    <?php endif; ?>
+
     <section class="section-header">
       <h1>Bayar Perjalanan</h1>
       <p>Periksa detail pembayaran dan pilih metode yang nyaman untuk Anda.</p>
