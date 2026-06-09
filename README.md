@@ -192,7 +192,7 @@ Tampilan pesan di payment.php:
 <?php endif; ?>
 ```
 
-### ⚡ Trigger
+## ⚡ Trigger
 
 Trigger diimplementasikan untuk mengotomasi proses bisnis pada Wandee tanpa perlu intervensi manual dari aplikasi. Terdapat 5 trigger yang dibuat beserta tabel log pendukungnya.
 
@@ -363,26 +363,23 @@ DELIMITER ;
 ---
 ![Cek Trigger yang Sudah Dibuat](https://raw.githubusercontent.com/TiwiMustikaDewi/LearnAndroidMobile/refs/heads/main/Screenshot%202026-06-05%20175216.png)
 
-# 🔧 Stored Function
+## 🔧 Stored Function
 Function pasa Wandee terdapat 3 custom function yang disimpan di database dan bisa dilihat di phpMyAdmin tab Routines.
 
 ### Built-in Function
+Built-in Function yang Digunakan
 
-Built-in function MySQL yang digunakan di proyek Wandee terbagi tiga kelompok:
-
-| Kelompok | Function | Lokasi |
-|---|---|---|
-| Tanggal & Waktu | `NOW()` | BookingModel.php — isi `created_at` saat INSERT booking |
-| Tanggal & Waktu | `CURRENT_TIMESTAMP` | Default kolom `created_at` / `updated_at` / `dihapus_at` di hampir semua tabel |
-| Tanggal & Waktu | `DATE_SUB(NOW(), INTERVAL 3 MINUTE)` | EVENT `auto_cancel_booking` — cek booking kadaluarsa |
-| Tanggal & Waktu | `DATE_FORMAT` & `MONTH` | DashboardModel.php — grafik booking bulanan |
-| Agregat | `AVG(rating)` | Trigger `after_insert_review` — hitung rata-rata rating |
-| Agregat | `COUNT(*)` | Trigger (jumlah review) & DashboardModel (statistik kategori & bulanan) |
-| Agregat | `ROUND(AVG(rating), 1)` | Trigger `after_insert_review` — bulatkan rating ke 1 desimal |
-| Agregat | `SUM(payment_amount)` | DashboardModel.php — hitung total revenue dari payment verified |
-| Agregat | `max(1,...)` & `min(5,...)` | ReviewModel.php — batasi nilai rating antara 1-5 |
-| String | `CONCAT(...)` | Custom function `info_destinasi` |
-| String | `UPPER(LEFT(nama, 3))` | Custom function `kode_destinasi` — ambil 3 karakter pertama jadi kapital |
+| File | Built-in Function | Kegunaan |
+|------|------------------|-----------|
+| BookingModel.php | `NOW()` | Mengisi waktu pembuatan booking secara otomatis |
+| DashboardModel.php | `SUM()` | Menghitung total pendapatan |
+| DashboardModel.php | `COUNT()` | Menghitung jumlah data booking, pembayaran, dan destinasi |
+| DashboardModel.php | `DATE_FORMAT()` | Mengelompokkan data berdasarkan bulan |
+| ReviewModel.php | `AVG()` | Menghitung rata-rata rating destinasi |
+| ReviewModel.php | `COUNT()` | Menghitung jumlah review |
+| ReviewModel.php | `ROUND()` | Membulatkan nilai rating |
+| ReviewModel.php | `MAX()` | Mencari rating tertinggi |
+| ReviewModel.php | `MIN()` | Mencari rating terendah |
 
 ### 1. cek_status_booking — Function Logika IF-ELSE
 ```sql
@@ -429,6 +426,81 @@ BEGIN
     RETURN CONCAT('Destinasi ', nama_dest, ' berlokasi di ', lokasi);
 END //
 DELIMITER ;
+```
+
+## 🔧 Stored Procedure
+Stored procedure dibuat untuk mengenkapsulasi logika bisnis di sisi database:
+| Nama Procedure | Fungsi | Dipanggil dari |
+|---------------|---------|---------------|
+| `sp_dashboard_summary` | Menghitung total destinasi, booking, pembayaran, dan total revenue untuk dashboard admin | `DashboardModel::getDashboardSummary()` |
+| `sp_search_destination` | Mencari destinasi berdasarkan kata kunci pada judul, lokasi, atau kategori | `DestinationModel::searchDestination()` |
+| `sp_verify_payment` | Memverifikasi pembayaran dan memperbarui status booking menjadi paid melalui trigger database | `PaymentModel::verifyPayment()` |
+
+### 1. sp_dashboard_summary — Ringkasan data admin:
+
+```sql
+CREATE PROCEDURE `sp_dashboard_summary`()
+BEGIN
+    SELECT
+        (SELECT COUNT(*) FROM destinations)                          AS total_destinations,
+        (SELECT COUNT(*) FROM bookings)                              AS total_bookings,
+        (SELECT COUNT(*) FROM payments)                              AS total_payments,
+        (SELECT COALESCE(SUM(payment_amount), 0)
+         FROM payments WHERE payment_status = 'verified')           AS total_revenue;
+END
+```
+Dipanggil di DashboardModel:
+```php
+public function getDashboardSummary() {
+    $result = mysqli_query($this->conn, "CALL sp_dashboard_summary()");
+    return mysqli_fetch_assoc($result);
+}
+```
+### 2. sp_search_destination — Pencarian destinasi:
+```sql
+CREATE PROCEDURE `sp_search_destination`(IN p_keyword VARCHAR(255))
+BEGIN
+    SELECT * FROM destinations
+    WHERE title    LIKE CONCAT('%', p_keyword, '%')
+       OR location LIKE CONCAT('%', p_keyword, '%')
+       OR category LIKE CONCAT('%', p_keyword, '%')
+    ORDER BY rating DESC;
+END
+```
+Dipanggil di DestinationModel::searchDestination menggunakan prepared statement:
+```php
+public function searchDestination($keyword) {
+    $stmt = mysqli_prepare($this->conn, "CALL sp_search_destination(?)");
+    mysqli_stmt_bind_param($stmt, "s", $keyword);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    // ...
+}
+```
+### 3. sp_verify_payment — Verifikasi pembayaran:
+```sql
+CREATE PROCEDURE `sp_verify_payment`(IN p_payment_id INT)
+BEGIN
+    DECLARE v_booking_id INT;
+
+    UPDATE payments
+    SET payment_status = 'verified', rejection_reason = ''
+    WHERE id = p_payment_id;
+
+    SELECT booking_id INTO v_booking_id
+    FROM payments WHERE id = p_payment_id;
+
+    UPDATE bookings
+    SET payment_status = 'paid'
+    WHERE id = v_booking_id;
+END
+```
+Dipanggil di PaymentModel::verifyPayment dan AdminController:
+```php
+public function verifyPayment($payment_id) {
+    $payment_id = (int)$payment_id;
+    return mysqli_query($this->conn, "CALL sp_verify_payment($payment_id)");
+}
 ```
 ## 🧩 Fragmentasi Data
 
