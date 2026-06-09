@@ -4,10 +4,10 @@ Wandee adalah platform pemesanan wisata yang dibangun menggunakan PHP dan MySQL 
 🗂️ Detail Konsep
 
 🔗 SQL Joins & Set Operations
-```
+
 ### 1. INNER JOIN — Booking Valid (DashboardModel::getValidBookings)
 Menampilkan hanya booking yang dipastikan memiliki user dan destinasi yang valid. Tidak menampilkan data kosong.
-
+```sql
 SELECT b.id, b.total_people, b.total_price, b.payment_status,
        b.trip_status, b.created_at,
        u.name  AS user_name,  u.email AS user_email,
@@ -18,10 +18,9 @@ INNER JOIN destinations d ON b.destination_id = d.id
 ORDER BY b.created_at DESC
 LIMIT 10;
 ```
-```
 ### 2. LEFT JOIN — Booking + User + Destinasi (DashboardModel::getRecentBookings)
 Menampilkan booking terbaru beserta nama user dan judul destinasi. Booking tetap muncul walau data user atau destinasi tidak ditemukan.
-
+```sql
 SELECT b.*, u.name AS user_name, d.title AS destination_title
 FROM bookings b
 LEFT JOIN users u        ON b.user_id        = u.id
@@ -29,10 +28,10 @@ LEFT JOIN destinations d ON b.destination_id = d.id
 ORDER BY b.created_at DESC
 LIMIT 5;
 ```
-```
+
 ### 3. RIGHT JOIN — Destinasi + Jumlah Booking (DestinationModel::getDestinationsWithBookingCount)
 Menampilkan semua destinasi beserta jumlah booking-nya, termasuk destinasi yang belum pernah dibooking sama sekali (booking_count = 0).
-
+```sql
 SELECT d.id, d.title, d.location, d.category,
        d.price, d.rating,
        COUNT(b.id) AS booking_count
@@ -41,10 +40,10 @@ RIGHT JOIN destinations d ON b.destination_id = d.id
 GROUP BY d.id, d.title, d.location, d.category, d.price, d.rating
 ORDER BY booking_count DESC;
 ```
-```
+
 ### 4. Simulasi FULL JOIN (DestinationModel::getFullJoinUsersDestinations)
 MySQL tidak mendukung FULL OUTER JOIN secara langsung, sehingga disimulasikan dengan LEFT JOIN + UNION + RIGHT JOIN. Menampilkan semua user dan semua destinasi, termasuk user yang belum booking dan destinasi yang belum pernah dibooking.
-
+```sql
 SELECT u.id AS user_id, u.name AS user_name,
        d.id AS dest_id, d.title AS dest_title,
        b.id AS booking_id, b.payment_status
@@ -60,10 +59,10 @@ RIGHT JOIN bookings b     ON u.id = b.user_id
 RIGHT JOIN destinations d ON b.destination_id = d.id
 ORDER BY user_id ASC, dest_id ASC;
 ```
-```
+
 ### 5. UNION — Rekonstruksi Fragmentasi (DestinationModel::getAllFromFragments)
 Menggabungkan data dari tiga tabel fragmentasi menjadi satu daftar destinasi tanpa duplikat. UNION secara otomatis membuang data yang sama persis.
-
+```sql
 SELECT id, title, location, category, image, trip_date, price, rating
 FROM frag_dest_gunung
 UNION
@@ -74,10 +73,10 @@ SELECT id, title, location, category, image, trip_date, price, rating
 FROM frag_dest_lainnya
 ORDER BY rating DESC;
 ```
-```
+
 ### 6. UNION ALL — Activity Log Admin (DashboardModel::getActivityLog)
 Menggabungkan semua log aktivitas dari tiga tabel log (booking baru, hapus destinasi, pembayaran) menjadi satu timeline. UNION ALL dipakai agar tidak ada log yang terbuang walau isinya mirip.
-
+```sql
 SELECT 'Booking Baru'    AS jenis, booking_id AS ref_id,
        keterangan, waktu
 FROM log_booking_baru
@@ -92,12 +91,10 @@ FROM log_pembayaran
 ORDER BY waktu DESC
 LIMIT 20;
 ```
-```
 ### 🔒 Transactions
 Transaksi yang sesungguhnya ada di BookingModel.php di method createWithPayment(). Transaksi diimplementasikan untuk menjamin atomicity — kedua INSERT (ke tabel bookings dan payments) harus berhasil semua atau gagal semua. Tidak bisa booking masuk tapi payment-nya tidak, atau sebaliknya.
-
 Implementasi di BookingModel::createWithPayment:
-
+```sql
 public function createWithPayment($bookingData, $paymentData) {
     mysqli_autocommit($this->conn, false);
     mysqli_begin_transaction($this->conn);  // ← START TRANSACTION
@@ -124,7 +121,6 @@ public function createWithPayment($bookingData, $paymentData) {
         return ['error' => $e->getMessage(), 'errno' => $errno];
     }
 }
-```
 ```
 ### ⚡ Trigger
 
