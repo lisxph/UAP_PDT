@@ -177,7 +177,7 @@ DELIMITER ;
 ---
 ![Cek Trigger yang Sudah Dibuat](https://raw.githubusercontent.com/TiwiMustikaDewi/LearnAndroidMobile/refs/heads/main/Screenshot%202026-06-05%20175216.png)
 
-🔧 Stored Function
+# 🔧 Stored Function
 Function pasa Wandee terdapat 3 custom function yang disimpan di database dan bisa dilihat di phpMyAdmin tab Routines.
 
 ### 1. cek_status_booking — Function Logika IF-ELSE
@@ -199,6 +199,8 @@ BEGIN
 END //
 DELIMITER ;
 ```
+<img width="929" height="467" alt="image" src="https://github.com/user-attachments/assets/09142577-48c4-4f0b-b55b-5b0c8d0b06c5" />
+
 ### 2. kode_destinasi — Function Manipulasi String
 ```sql
 DELIMITER //
