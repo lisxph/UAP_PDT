@@ -1,11 +1,131 @@
-# 🧭 Wandee (Proyek UAP)
+🧭 Wandee (Proyek UAP)
+Wandee adalah platform pemesanan wisata yang dibangun menggunakan PHP dan MySQL melalui Laragon. Sistem ini mengelola destinasi wisata, booking perjalanan, pembayaran, dan ulasan pengguna. Dalam konteks mata kuliah Pemrosesan Data Terdistribusi, Wandee dilengkapi dengan implementasi Database Views, SQL Joins & Set Operations, Transactions, Deadlock Management, Function & Stored Procedure, trigger otomatis, fragmentasi data, backup database + task scheduler, dan replikasi Master-Master untuk meningkatkan keandalan dan ketersediaan sistem.
 
-Wandee adalah platform pemesanan wisata yang dibangun menggunakan PHP dan MySQL melalui Laragon. Sistem ini mengelola destinasi wisata, booking perjalanan, pembayaran, dan ulasan pengguna. Dalam konteks mata kuliah Pemrosesan Data Terdistribusi, Wandee dilengkapi dengan implementasi **Database Views, SQL Joins & Set Operations, Transactions, Deadlock Management, Function & Stored Procedure, trigger otomatis, fragmentasi data, backup database + task scheduler, dan replikasi Master-Master** untuk meningkatkan keandalan dan ketersediaan sistem.
+🗂️ Detail Konsep
 
----
+🔗 SQL Joins & Set Operations
+```
+### 1. INNER JOIN — Booking Valid (DashboardModel::getValidBookings)
+Menampilkan hanya booking yang dipastikan memiliki user dan destinasi yang valid. Tidak menampilkan data kosong.
 
-## 🗂️ Detail Konsep
+SELECT b.id, b.total_people, b.total_price, b.payment_status,
+       b.trip_status, b.created_at,
+       u.name  AS user_name,  u.email AS user_email,
+       d.title AS destination_title, d.location AS destination_location
+FROM bookings b
+INNER JOIN users u        ON b.user_id        = u.id
+INNER JOIN destinations d ON b.destination_id = d.id
+ORDER BY b.created_at DESC
+LIMIT 10;
+```
+```
+### 2. LEFT JOIN — Booking + User + Destinasi (DashboardModel::getRecentBookings)
+Menampilkan booking terbaru beserta nama user dan judul destinasi. Booking tetap muncul walau data user atau destinasi tidak ditemukan.
 
+SELECT b.*, u.name AS user_name, d.title AS destination_title
+FROM bookings b
+LEFT JOIN users u        ON b.user_id        = u.id
+LEFT JOIN destinations d ON b.destination_id = d.id
+ORDER BY b.created_at DESC
+LIMIT 5;
+```
+```
+### 3. RIGHT JOIN — Destinasi + Jumlah Booking (DestinationModel::getDestinationsWithBookingCount)
+Menampilkan semua destinasi beserta jumlah booking-nya, termasuk destinasi yang belum pernah dibooking sama sekali (booking_count = 0).
+
+SELECT d.id, d.title, d.location, d.category,
+       d.price, d.rating,
+       COUNT(b.id) AS booking_count
+FROM bookings b
+RIGHT JOIN destinations d ON b.destination_id = d.id
+GROUP BY d.id, d.title, d.location, d.category, d.price, d.rating
+ORDER BY booking_count DESC;
+```
+```
+### 4. Simulasi FULL JOIN (DestinationModel::getFullJoinUsersDestinations)
+MySQL tidak mendukung FULL OUTER JOIN secara langsung, sehingga disimulasikan dengan LEFT JOIN + UNION + RIGHT JOIN. Menampilkan semua user dan semua destinasi, termasuk user yang belum booking dan destinasi yang belum pernah dibooking.
+
+SELECT u.id AS user_id, u.name AS user_name,
+       d.id AS dest_id, d.title AS dest_title,
+       b.id AS booking_id, b.payment_status
+FROM users u
+LEFT JOIN bookings b     ON u.id = b.user_id
+LEFT JOIN destinations d ON b.destination_id = d.id
+UNION
+SELECT u.id AS user_id, u.name AS user_name,
+       d.id AS dest_id, d.title AS dest_title,
+       b.id AS booking_id, b.payment_status
+FROM users u
+RIGHT JOIN bookings b     ON u.id = b.user_id
+RIGHT JOIN destinations d ON b.destination_id = d.id
+ORDER BY user_id ASC, dest_id ASC;
+```
+```
+### 5. UNION — Rekonstruksi Fragmentasi (DestinationModel::getAllFromFragments)
+Menggabungkan data dari tiga tabel fragmentasi menjadi satu daftar destinasi tanpa duplikat. UNION secara otomatis membuang data yang sama persis.
+
+SELECT id, title, location, category, image, trip_date, price, rating
+FROM frag_dest_gunung
+UNION
+SELECT id, title, location, category, image, trip_date, price, rating
+FROM frag_dest_pantai
+UNION
+SELECT id, title, location, category, image, trip_date, price, rating
+FROM frag_dest_lainnya
+ORDER BY rating DESC;
+```
+```
+### 6. UNION ALL — Activity Log Admin (DashboardModel::getActivityLog)
+Menggabungkan semua log aktivitas dari tiga tabel log (booking baru, hapus destinasi, pembayaran) menjadi satu timeline. UNION ALL dipakai agar tidak ada log yang terbuang walau isinya mirip.
+
+SELECT 'Booking Baru'    AS jenis, booking_id AS ref_id,
+       keterangan, waktu
+FROM log_booking_baru
+UNION ALL
+SELECT 'Hapus Destinasi' AS jenis, dest_id AS ref_id,
+       CONCAT('Hapus: ', judul), dihapus_at
+FROM log_hapus_destinasi
+UNION ALL
+SELECT 'Pembayaran'      AS jenis, payment_id AS ref_id,
+       CONCAT(nama_user, ' - ', status_lama, ' → ', status_baru), waktu
+FROM log_pembayaran
+ORDER BY waktu DESC
+LIMIT 20;
+```
+```
+### 🔒 Transactions
+Transaksi yang sesungguhnya ada di BookingModel.php di method createWithPayment(). Transaksi diimplementasikan untuk menjamin atomicity — kedua INSERT (ke tabel bookings dan payments) harus berhasil semua atau gagal semua. Tidak bisa booking masuk tapi payment-nya tidak, atau sebaliknya.
+
+Implementasi di BookingModel::createWithPayment:
+
+public function createWithPayment($bookingData, $paymentData) {
+    mysqli_autocommit($this->conn, false);
+    mysqli_begin_transaction($this->conn);  // ← START TRANSACTION
+
+    try {
+        // INSERT ke tabel bookings
+        $r1 = mysqli_query($this->conn, $q1);
+        if (!$r1) throw new Exception("Gagal membuat booking");
+
+        $booking_id = mysqli_insert_id($this->conn);
+
+        // INSERT ke tabel payments (menggunakan booking_id dari step 1)
+        $r2 = mysqli_query($this->conn, $q2);
+        if (!$r2) throw new Exception("Gagal membuat payment");
+
+        mysqli_commit($this->conn);         // ← COMMIT (kalau sukses)
+        mysqli_autocommit($this->conn, true);
+        return ['booking_id' => $booking_id, 'payment_id' => mysqli_insert_id($this->conn)];
+
+    } catch (Exception $e) {
+        $errno = mysqli_errno($this->conn); // Simpan errno SEBELUM rollback karena rollback mereset errno ke 0
+        mysqli_rollback($this->conn);       // ← ROLLBACK (kalau gagal)
+        mysqli_autocommit($this->conn, true);
+        return ['error' => $e->getMessage(), 'errno' => $errno];
+    }
+}
+```
+```
 ### ⚡ Trigger
 
 Trigger diimplementasikan untuk mengotomasi proses bisnis pada Wandee tanpa perlu intervensi manual dari aplikasi. Terdapat 5 trigger yang dibuat beserta tabel log pendukungnya.
