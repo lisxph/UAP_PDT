@@ -129,6 +129,7 @@ public function createWithPayment($bookingData, $paymentData) {
 Deadlock disimulasikan dan ditangani secara eksplisit di Wandee. Deadlock terjadi di method createWithPayment() pada BookingModel.php, tepatnya saat dua user menekan tombol "Lanjutkan ke Instruksi Pembayaran" pada destinasi yang sama secara bersamaan.
 
 **Skenario Deadlock (Pola A-B Circular Wait):**
+```md
 Device A (user 7):                    Device B (user 8):
 START TRANSACTION                     START TRANSACTION
 │                                     │
@@ -146,6 +147,7 @@ START TRANSACTION                     START TRANSACTION
          A nunggu B, B nunggu A
               → DEADLOCK!
          MySQL rollback salah satu
+```
 
 ### Implementasi simulasi di BookingModel::createWithPayment:
 ```sql
@@ -163,7 +165,7 @@ if ($isOddUser) {
 ```
 
 ### Penanganan Deadlock
-**1. Penanganan oleh DBMS (Otomatis)**
+1. Penanganan oleh DBMS (Otomatis)
 MySQL InnoDB mendeteksi deadlock secara otomatis dan melakukan ROLLBACK pada salah satu transaksi. Transaksi yang di-rollback mendapat error 1213 dan harus diulangi.
 
 2. Rollback Manual:
