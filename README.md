@@ -93,7 +93,7 @@ FROM log_pembayaran
 ORDER BY waktu DESC
 LIMIT 20;
 ```
-### 🔒 Transactions
+## 🔒 Transactions
 Transaksi yang sesungguhnya ada di BookingModel.php di method createWithPayment(). Transaksi diimplementasikan untuk menjamin atomicity — kedua INSERT (ke tabel bookings dan payments) harus berhasil semua atau gagal semua. Tidak bisa booking masuk tapi payment-nya tidak, atau sebaliknya.
 Implementasi di BookingModel::createWithPayment:
 ```sql
