@@ -148,7 +148,7 @@ START TRANSACTION                     START TRANSACTION
          MySQL rollback salah satu
 
 ### Implementasi simulasi di BookingModel::createWithPayment:
-``sql
+```sql
 if ($isOddUser) {
     // Urutan A: destinations → payments
     mysqli_query($this->conn, "SELECT id FROM destinations WHERE id = $destination_id FOR UPDATE");
@@ -171,6 +171,7 @@ ROLLBACK;           -- Batalkan semua perubahan dalam transaksi
 SET autocommit = 1; -- Kembalikan autocommit ke normal
 
 3. Penanganan di PHP — Deteksi errno 1213:
+```sql
 if (isset($result['error'])) {
     // MySQL errno 1213 = Deadlock found when trying to get lock
     if (($result['errno'] ?? 0) === 1213) {
@@ -180,12 +181,14 @@ if (isset($result['error'])) {
     }
     exit;
 }
+```
 
 Tampilan pesan di payment.php:
+```sql
 <?php if (($_GET['error'] ?? '') === 'deadlock'): ?>
     Terjadi Deadlock — Transaksi Dibatalkan Otomatis
 <?php endif; ?>
-
+```
 
 ### ⚡ Trigger
 
